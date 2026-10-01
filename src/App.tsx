@@ -5,7 +5,7 @@ import { evaluateBenefits } from "./benefits";
 import { AppState, Job } from "./domain";
 import { theme } from "./theme";
 
-type Screen = "role" | "client" | "workerReady" | "workerGoal" | "workerMap" | "progress" | "benefits" | "profile";
+type Screen = "home" | "role" | "client" | "workerReady" | "workerGoal" | "workerMap" | "progress" | "benefits" | "profile";
 const money=(n:number)=>`$${n.toLocaleString("es-AR")}`;
 
 function ProgressBar({value}:{value:number}) {
@@ -14,7 +14,7 @@ function ProgressBar({value}:{value:number}) {
 
 export default function App(){
   const [state,setState]=useState<AppState>(initialState);
-  const [screen,setScreen]=useState<Screen>("role");
+  const [screen,setScreen]=useState<Screen>("home");
   const benefits=useMemo(()=>evaluateBenefits(state.worker,state.requestedBenefits),[state]);
   const next=benefits.find(b=>b.status==="locked");
   const unlocked=benefits.find(b=>b.status==="available");
@@ -26,6 +26,24 @@ export default function App(){
       lifetimeRegisteredIncome:p.worker.lifetimeRegisteredIncome+job.amount},
     jobs:p.jobs.map(j=>j.id===job.id?{...j,status:"completed"}:j)
   }));
+
+  if(screen==="home") return <Shell>
+    <View style={s.hero}>
+      <Text style={s.logoHero}>chang<Text style={s.at}>@</Text></Text>
+      <Text style={s.claim}>Cada changa cuenta.</Text>
+      <Text style={s.promise}>Trabajá, registrá tu actividad y accedé a beneficios reales.</Text>
+
+      <View style={s.steps}>
+        <View style={s.step}><Text style={s.stepIcon}>💼</Text><View style={s.stepCopy}><Text style={s.stepTitle}>TRABAJÁ</Text><Text style={s.muted}>Encontrá oportunidades cerca tuyo.</Text></View></View>
+        <View style={s.step}><Text style={s.stepIcon}>📈</Text><View style={s.stepCopy}><Text style={s.stepTitle}>SUMÁ</Text><Text style={s.muted}>Cada trabajo construye tu historial.</Text></View></View>
+        <View style={s.step}><Text style={s.stepIcon}>🔓</Text><View style={s.stepCopy}><Text style={s.stepTitle}>AVANZÁ</Text><Text style={s.muted}>Tu actividad puede habilitar beneficios reales.</Text></View></View>
+      </View>
+
+      <TouchableOpacity style={s.go} onPress={()=>setScreen("workerReady")}><Text style={s.goText}>QUIERO TRABAJAR</Text></TouchableOpacity>
+      <TouchableOpacity style={s.secondary} onPress={()=>setScreen("client")}><Text style={s.secondaryText}>NECESITO UN CHANGARÍN</Text></TouchableOpacity>
+      <TouchableOpacity onPress={()=>setScreen("role")}><Text style={s.smallLink}>Ver modos de Chang@</Text></TouchableOpacity>
+    </View>
+  </Shell>;
 
   if(screen==="role") return <Shell>
     <View style={s.center}>
@@ -113,6 +131,7 @@ function WorkerNav({go}:{go:(s:Screen)=>void}){return <View style={s.nav}>
 
 const c=theme.colors;
 const s=StyleSheet.create({
+ hero:{minHeight:650,justifyContent:"center",gap:16},logoHero:{fontSize:58,fontWeight:"900",color:c.text,letterSpacing:-2},claim:{fontSize:38,lineHeight:42,fontWeight:"900",color:c.text},promise:{fontSize:19,lineHeight:27,color:c.muted,maxWidth:360},steps:{gap:10,marginVertical:8},step:{flexDirection:"row",alignItems:"center",gap:13,backgroundColor:c.card,borderWidth:1,borderColor:c.border,borderRadius:16,padding:14},stepIcon:{fontSize:25},stepCopy:{flex:1,gap:2},stepTitle:{fontSize:13,fontWeight:"900",letterSpacing:1,color:c.accent},secondary:{padding:16,borderRadius:14,alignItems:"center",borderWidth:1,borderColor:c.primary},secondaryText:{fontWeight:"900",color:c.primaryLight},smallLink:{textAlign:"center",color:c.muted,fontWeight:"700",padding:8},
  safe:{flex:1,backgroundColor:c.bg},header:{padding:18,borderBottomWidth:1,borderBottomColor:c.border},
  body:{padding:20,paddingBottom:40,gap:16},logo:{fontSize:27,fontWeight:"900",color:c.text},logoBig:{fontSize:48,fontWeight:"900",color:c.text},at:{color:c.accent},
  center:{minHeight:570,justifyContent:"center",gap:16},h1:{fontSize:30,lineHeight:35,fontWeight:"900",color:c.text},h1Center:{fontSize:30,lineHeight:36,fontWeight:"900",color:c.text,textAlign:"center"},
