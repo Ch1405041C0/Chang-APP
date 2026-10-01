@@ -19,6 +19,9 @@ export default function App(){
   const word=useRef(new Animated.Value(0)).current;
   const slogan=useRef(new Animated.Value(0)).current;
   const [goalOpen,setGoalOpen]=useState(false);
+  const [history,setHistory]=useState<Screen[]>([]);
+  const navigate=(next:Screen)=>{setHistory(h=>[...h,screen]);setScreen(next)};
+  const goBack=()=>setHistory(h=>{const prev=h[h.length-1];if(prev)setScreen(prev);return h.slice(0,-1)});
   const benefits=useMemo(()=>evaluateBenefits(state.worker,state.requestedBenefits),[state]);
   const next=benefits.find(b=>b.status==="locked");
   const unlocked=benefits.find(b=>b.status==="available");
@@ -33,6 +36,10 @@ export default function App(){
       ]),
       Animated.delay(900)
     ]).start(()=>setScreen("role"));
+  },[screen]);
+
+  useEffect(()=>{
+    if(screen==="role") setHistory([]);
   },[screen]);
 
   const accept=(job:Job)=>setState(p=>({...p,jobs:p.jobs.map(j=>j.id===job.id?{...j,status:"accepted"}:j)}));
@@ -65,18 +72,18 @@ export default function App(){
       <Text style={s.logoBig}>chang<Text style={s.at}>@</Text></Text>
       <Text style={s.h1Center}>¿Qué necesitás hoy?</Text>
       <Text style={s.mutedCenter}>Una misma comunidad. Dos formas de entrar.</Text>
-      <TouchableOpacity style={s.roleCard} onPress={()=>setScreen("client")}>
+      <TouchableOpacity style={s.roleCard} onPress={()=>navigate("client")}>
         <Text style={s.roleIcon}>⌕</Text><Text style={s.roleTitle}>BUSCO UN CHANGARÍN</Text>
         <Text style={s.mutedCenter}>Necesito alguien para hacer un trabajo</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={s.roleCard} onPress={()=>setScreen("workerReady")}>
+      <TouchableOpacity style={s.roleCard} onPress={()=>navigate("workerReady")}>
         <Text style={s.roleIcon}>⚒</Text><Text style={s.roleTitle}>SOY CHANGADOR</Text>
         <Text style={s.mutedCenter}>Quiero encontrar trabajo</Text>
       </TouchableOpacity>
     </View>
   </Shell>;
 
-  if(screen==="client") return <Shell back={()=>setScreen("role")}>
+  if(screen==="client") return <Shell back={goBack}>
     <Text style={s.eyebrow}>BUSCAR AYUDA</Text><Text style={s.h1}>¿Qué necesitás resolver?</Text>
     <View style={s.card}><Text style={s.h2}>Contáselo a Chang@</Text>
       <Text style={s.muted}>Ej.: “Pierde agua abajo de la pileta y necesito alguien hoy.”</Text>
@@ -86,18 +93,18 @@ export default function App(){
     <Text style={s.note}>Próxima iteración: interpretación IA + ubicación + matching + mapa del cliente.</Text>
   </Shell>;
 
-  if(screen==="workerReady") return <Shell back={()=>setScreen("role")}>
+  if(screen==="workerReady") return <Shell back={goBack}>
     <View style={s.center}>
       <Text style={s.eyebrow}>MODO CHANGADOR</Text><Text style={s.h1Center}>¿Salimos a buscar trabajo?</Text>
       <Text style={s.mutedCenter}>Cuando estés disponible Chang@ puede mostrarte oportunidades compatibles con tu oficio.</Text>
       <View style={s.statusOff}><Text style={s.statusText}>● NO DISPONIBLE</Text></View>
-      <TouchableOpacity style={s.go} onPress={()=>{setScreen("workerMap");setGoalOpen(true)}}><Text style={s.goText}>PONERME DISPONIBLE</Text></TouchableOpacity>
+      <TouchableOpacity style={s.go} onPress={()=>{navigate("workerMap");setGoalOpen(true)}}><Text style={s.goText}>PONERME DISPONIBLE</Text></TouchableOpacity>
     </View>
   </Shell>;
 
-  if(screen==="workerMap") return <WorkerShell screen={screen} go={setScreen}>
+  if(screen==="workerMap") return <WorkerShell screen={screen} go={navigate} back={goBack}>
     <View style={s.row}><View><Text style={s.success}>● DISPONIBLE</Text><Text style={s.h1}>Oportunidades</Text></View>
-      <TouchableOpacity onPress={()=>setScreen("workerReady")}><Text style={s.link}>Desconectar</Text></TouchableOpacity></View>
+      <TouchableOpacity onPress={()=>navigate("workerReady")}><Text style={s.link}>Desconectar</Text></TouchableOpacity></View>
     <View style={s.map}><Text style={s.mapText}>MAPA DE OPORTUNIDADES</Text><Text style={s.mutedCenter}>Acá va el mapa real con trabajos cercanos.</Text></View>
     {state.jobs.map(job=><View style={s.card} key={job.id}>
       <Text style={s.eyebrow}>{job.zone.toUpperCase()}</Text><Text style={s.h2}>{job.title}</Text>
@@ -119,25 +126,25 @@ export default function App(){
     </Modal>
   </WorkerShell>;
 
-  if(screen==="progress") return <WorkerShell screen={screen} go={setScreen}><Text style={s.h1}>Mi progreso real</Text>
+  if(screen==="progress") return <WorkerShell screen={screen} go={navigate} back={goBack}><Text style={s.h1}>Mi progreso real</Text>
     <View style={s.card}><Text style={s.eyebrow}>INGRESOS REGISTRADOS</Text><Text style={s.big}>{money(state.worker.lifetimeRegisteredIncome)}</Text></View>
     <View style={s.card}><Text style={s.eyebrow}>TRABAJOS COMPLETADOS</Text><Text style={s.big}>{state.worker.completedJobs}</Text></View>
     </WorkerShell>;
 
-  if(screen==="benefits") return <WorkerShell screen={screen} go={setScreen}><Text style={s.h1}>Beneficios</Text>
+  if(screen==="benefits") return <WorkerShell screen={screen} go={navigate} back={goBack}><Text style={s.h1}>Beneficios</Text>
     {benefits.map(b=><View style={s.card} key={b.id}><Text style={s.eyebrow}>{b.status==="locked"?"EN PROGRESO":"DESBLOQUEADO"}</Text>
       <Text style={s.h2}>{b.title}</Text><Text style={s.muted}>{b.description}</Text>
       {b.status==="locked"&&<><ProgressBar value={b.progress}/><Text style={s.muted}>Te falta {b.missing.join(" y ")}.</Text></>}
     </View>)}</WorkerShell>;
 
-  return <WorkerShell screen={screen} go={setScreen}><Text style={s.h1}>Mi identidad laboral</Text><View style={s.card}><Text style={s.h2}>{state.worker.name}</Text><Text style={s.muted}>{state.worker.trade}</Text></View></WorkerShell>;
+  return <WorkerShell screen={screen} go={navigate} back={goBack}><Text style={s.h1}>Mi identidad laboral</Text><View style={s.card}><Text style={s.h2}>{state.worker.name}</Text><Text style={s.muted}>{state.worker.trade}</Text></View></WorkerShell>;
 }
 
 function Shell({children,back}:{children:React.ReactNode,back?:()=>void}){
  return <SafeAreaView style={s.safe}><View style={s.header}>{back?<TouchableOpacity onPress={back}><Text style={s.link}>← Volver</Text></TouchableOpacity>:<Text style={s.logo}>chang<Text style={s.at}>@</Text></Text>}</View><ScrollView contentContainerStyle={s.body}>{children}</ScrollView></SafeAreaView>;
 }
-function WorkerShell({children,screen,go}:{children:React.ReactNode,screen:Screen,go:(s:Screen)=>void}){
- return <SafeAreaView style={s.safe}><View style={s.header}><Text style={s.logo}>chang<Text style={s.at}>@</Text></Text></View><ScrollView contentContainerStyle={s.workerBody}>{children}</ScrollView><WorkerNav go={go} active={screen}/></SafeAreaView>;
+function WorkerShell({children,screen,go,back}:{children:React.ReactNode,screen:Screen,go:(s:Screen)=>void,back:()=>void}){
+ return <SafeAreaView style={s.safe}><View style={s.headerRow}><TouchableOpacity onPress={back} style={s.backButton}><Text style={s.link}>←</Text></TouchableOpacity><Text style={s.logo}>chang<Text style={s.at}>@</Text></Text><View style={s.headerSpacer}/></View><ScrollView contentContainerStyle={s.workerBody}>{children}</ScrollView><WorkerNav go={go} active={screen}/></SafeAreaView>;
 }
 function WorkerNav({go,active}:{go:(s:Screen)=>void,active:Screen}){return <View style={s.nav}>
  {([["workerMap","Trabajo"],["progress","Progreso"],["benefits","Beneficios"],["profile","Perfil"]] as [Screen,string][]).map(([k,l])=><TouchableOpacity key={k} onPress={()=>go(k)}><Text style={[s.navText,active===k&&s.navActive]}>{l}</Text></TouchableOpacity>)}
@@ -147,7 +154,7 @@ const c=theme.colors;
 const s=StyleSheet.create({
  splash:{flex:1,backgroundColor:c.bg,justifyContent:"center",alignItems:"center",padding:24},splashBrand:{alignItems:"center",gap:24},splashWordRow:{flexDirection:"row",alignItems:"baseline"},splashWord:{fontSize:58,fontWeight:"900",color:c.text,letterSpacing:-2},splashAt:{fontSize:64,fontWeight:"900",color:c.accent},splashClaim:{fontSize:16,lineHeight:23,fontWeight:"900",letterSpacing:1.5,color:c.text,textAlign:"center"},
  hero:{minHeight:650,justifyContent:"center",gap:16},logoHero:{fontSize:58,fontWeight:"900",color:c.text,letterSpacing:-2},claim:{fontSize:38,lineHeight:42,fontWeight:"900",color:c.text},promise:{fontSize:19,lineHeight:27,color:c.muted,maxWidth:360},steps:{gap:10,marginVertical:8},step:{flexDirection:"row",alignItems:"center",gap:13,backgroundColor:c.card,borderWidth:1,borderColor:c.border,borderRadius:16,padding:14},stepIcon:{fontSize:25},stepCopy:{flex:1,gap:2},stepTitle:{fontSize:13,fontWeight:"900",letterSpacing:1,color:c.accent},secondary:{padding:16,borderRadius:14,alignItems:"center",borderWidth:1,borderColor:c.primary},secondaryText:{fontWeight:"900",color:c.primaryLight},smallLink:{textAlign:"center",color:c.muted,fontWeight:"700",padding:8},
- safe:{flex:1,backgroundColor:c.bg},header:{padding:18,borderBottomWidth:1,borderBottomColor:c.border},
+ safe:{flex:1,backgroundColor:c.bg},header:{padding:18,borderBottomWidth:1,borderBottomColor:c.border},headerRow:{padding:18,borderBottomWidth:1,borderBottomColor:c.border,flexDirection:"row",alignItems:"center",justifyContent:"space-between"},backButton:{minWidth:44,paddingVertical:4},headerSpacer:{minWidth:44},
  body:{padding:20,paddingBottom:40,gap:16},workerBody:{padding:14,paddingBottom:24,gap:12},logo:{fontSize:27,fontWeight:"900",color:c.text},logoBig:{fontSize:48,fontWeight:"900",color:c.text},at:{color:c.accent},
  center:{minHeight:570,justifyContent:"center",gap:16},h1:{fontSize:30,lineHeight:35,fontWeight:"900",color:c.text},h1Center:{fontSize:30,lineHeight:36,fontWeight:"900",color:c.text,textAlign:"center"},
  h2:{fontSize:20,fontWeight:"800",color:c.text},muted:{color:c.muted,lineHeight:21},mutedCenter:{color:c.muted,lineHeight:21,textAlign:"center"},
