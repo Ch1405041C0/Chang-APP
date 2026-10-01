@@ -10,7 +10,7 @@ export const theme = {
     text: "#f1f3f9",
     muted: "#8b92b6",
     border: "rgba(255,255,255,0.08)",
-    success: "#00e676",
+    success: "#00f2fe",
     warning: "#ffd600",
     danger: "#ff1744",
   },
