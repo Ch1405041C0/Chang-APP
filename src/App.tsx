@@ -1,11 +1,11 @@
-import React, { useMemo, useState } from "react";
-import { Modal, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Animated, Easing, Modal, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { initialState } from "./demo";
 import { evaluateBenefits } from "./benefits";
 import { AppState, Job } from "./domain";
 import { theme } from "./theme";
 
-type Screen = "role" | "client" | "workerReady" | "workerMap" | "progress" | "benefits" | "profile";
+type Screen = "splash" | "role" | "client" | "workerReady" | "workerMap" | "progress" | "benefits" | "profile";
 const money=(n:number)=>`$${n.toLocaleString("es-AR")}`;
 
 function ProgressBar({value}:{value:number}) {
@@ -14,11 +14,26 @@ function ProgressBar({value}:{value:number}) {
 
 export default function App(){
   const [state,setState]=useState<AppState>(initialState);
-  const [screen,setScreen]=useState<Screen>("role");
+  const [screen,setScreen]=useState<Screen>("splash");
+  const spin=useRef(new Animated.Value(0)).current;
+  const word=useRef(new Animated.Value(0)).current;
+  const slogan=useRef(new Animated.Value(0)).current;
   const [goalOpen,setGoalOpen]=useState(false);
   const benefits=useMemo(()=>evaluateBenefits(state.worker,state.requestedBenefits),[state]);
   const next=benefits.find(b=>b.status==="locked");
   const unlocked=benefits.find(b=>b.status==="available");
+
+  useEffect(()=>{
+    if(screen!=="splash") return;
+    Animated.sequence([
+      Animated.timing(spin,{toValue:1,duration:650,easing:Easing.out(Easing.cubic),useNativeDriver:true}),
+      Animated.parallel([
+        Animated.timing(word,{toValue:1,duration:500,easing:Easing.out(Easing.cubic),useNativeDriver:true}),
+        Animated.timing(slogan,{toValue:1,duration:650,delay:180,useNativeDriver:true})
+      ]),
+      Animated.delay(900)
+    ]).start(()=>setScreen("role"));
+  },[screen]);
 
   const accept=(job:Job)=>setState(p=>({...p,jobs:p.jobs.map(j=>j.id===job.id?{...j,status:"accepted"}:j)}));
   const complete=(job:Job)=>setState(p=>({...p,
@@ -27,6 +42,23 @@ export default function App(){
       lifetimeRegisteredIncome:p.worker.lifetimeRegisteredIncome+job.amount},
     jobs:p.jobs.map(j=>j.id===job.id?{...j,status:"completed"}:j)
   }));
+
+  if(screen==="splash") {
+    const rotate=spin.interpolate({inputRange:[0,1],outputRange:["-220deg","0deg"]});
+    const slide=word.interpolate({inputRange:[0,1],outputRange:[-22,0]});
+    return <SafeAreaView style={s.splash}>
+      <View style={s.splashBrand}>
+        <View style={s.splashWordRow}>
+          <Animated.Text style={[s.splashWord,{opacity:word,transform:[{translateX:slide}]}]}>chang</Animated.Text>
+          <Animated.Text style={[s.splashAt,{transform:[{rotate},{scale:spin.interpolate({inputRange:[0,1],outputRange:[1.5,1]})}]}]}>@</Animated.Text>
+        </View>
+        <Animated.View style={{opacity:slogan}}>
+          <Text style={s.splashClaim}>TU TRABAJO CUENTA.</Text>
+          <Text style={s.splashClaim}>TU HISTORIA CRECE.</Text>
+        </Animated.View>
+      </View>
+    </SafeAreaView>;
+  }
 
   if(screen==="role") return <Shell>
     <View style={s.center}>
@@ -113,6 +145,7 @@ function WorkerNav({go,active}:{go:(s:Screen)=>void,active:Screen}){return <View
 
 const c=theme.colors;
 const s=StyleSheet.create({
+ splash:{flex:1,backgroundColor:c.bg,justifyContent:"center",alignItems:"center",padding:24},splashBrand:{alignItems:"center",gap:24},splashWordRow:{flexDirection:"row",alignItems:"baseline"},splashWord:{fontSize:58,fontWeight:"900",color:c.text,letterSpacing:-2},splashAt:{fontSize:64,fontWeight:"900",color:c.accent},splashClaim:{fontSize:16,lineHeight:23,fontWeight:"900",letterSpacing:1.5,color:c.text,textAlign:"center"},
  hero:{minHeight:650,justifyContent:"center",gap:16},logoHero:{fontSize:58,fontWeight:"900",color:c.text,letterSpacing:-2},claim:{fontSize:38,lineHeight:42,fontWeight:"900",color:c.text},promise:{fontSize:19,lineHeight:27,color:c.muted,maxWidth:360},steps:{gap:10,marginVertical:8},step:{flexDirection:"row",alignItems:"center",gap:13,backgroundColor:c.card,borderWidth:1,borderColor:c.border,borderRadius:16,padding:14},stepIcon:{fontSize:25},stepCopy:{flex:1,gap:2},stepTitle:{fontSize:13,fontWeight:"900",letterSpacing:1,color:c.accent},secondary:{padding:16,borderRadius:14,alignItems:"center",borderWidth:1,borderColor:c.primary},secondaryText:{fontWeight:"900",color:c.primaryLight},smallLink:{textAlign:"center",color:c.muted,fontWeight:"700",padding:8},
  safe:{flex:1,backgroundColor:c.bg},header:{padding:18,borderBottomWidth:1,borderBottomColor:c.border},
  body:{padding:20,paddingBottom:40,gap:16},workerBody:{padding:14,paddingBottom:24,gap:12},logo:{fontSize:27,fontWeight:"900",color:c.text},logoBig:{fontSize:48,fontWeight:"900",color:c.text},at:{color:c.accent},
