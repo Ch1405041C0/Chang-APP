@@ -1,6 +1,6 @@
 {
   "name": "chang-app",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "main": "index.js",
   "scripts": {
@@ -12,7 +12,8 @@
   "dependencies": {
     "expo": "~57.0.0",
     "react": "19.2.3",
-    "react-native": "0.86.0"
+    "react-native": "0.86.0",
+    "react-native-maps": "^1.26.20"
   },
   "devDependencies": {
     "@types/react": "~19.2.2",
