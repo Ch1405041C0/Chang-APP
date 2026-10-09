@@ -1,5 +1,11 @@
 export type WorkStatus = "available" | "accepted" | "completed";
 export type BenefitStatus = "locked" | "available" | "requested" | "active";
+export type RequestStatus = "draft" | "searching" | "matched" | "accepted" | "completed";
+
+export interface Coordinates {
+  latitude: number;
+  longitude: number;
+}
 
 export interface WorkerProfile {
   id: string;
@@ -20,6 +26,19 @@ export interface Job {
   amount: number;
   zone: string;
   status: WorkStatus;
+  location: Coordinates;
+  description?: string;
+  distanceKm?: number;
+}
+
+export interface WorkRequest {
+  id: string;
+  description: string;
+  inferredTrade: string;
+  zone: string;
+  location: Coordinates;
+  status: RequestStatus;
+  createdAt: string;
 }
 
 export interface BenefitDefinition {
@@ -43,5 +62,6 @@ export interface BenefitResult extends BenefitDefinition {
 export interface AppState {
   worker: WorkerProfile;
   jobs: Job[];
+  requests: WorkRequest[];
   requestedBenefits: string[];
 }
